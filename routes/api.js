@@ -15,6 +15,22 @@ mongoose.connect(db, options, function(error) {
     error ? console.log(error) : console.log("Connected to MongoDB")
 });
 
+function verifyToken(req, res, next) {
+  if(!req.headers.authorization) {
+    return res.status(401).send('Unauthorized request')
+  }
+  let token = req.headers.authorization.split(' ')[1]
+  if(token === 'null') {
+    return res.status(401).send('Unauthorized request')
+  }
+  let payload = jwt.verify(token, 'secretKey')
+  if(!payload) {
+    return res.status(401).send('Unauthorized request')
+  }
+  req.userId = payload.subject
+  next()
+}
+
 router.get('/', (req, res) => {
     res.send("From Api Route")
 })
@@ -94,7 +110,7 @@ router.get('/events', (req,res) => {
   res.json(events)
 })
 
-router.get('/special', (req,res) => {
+router.get('/special', verifyToken, (req,res) => {
     let events = [
       {
         "_id": "1",
